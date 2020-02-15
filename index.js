@@ -1,8 +1,8 @@
 const epd7x5 = require('./build/Release/epd7x5');
 const gd = require('node-gd');
 
-let width = 640;
-let height = 384;
+let width = 800;
+let height = 480;
 
 function getImageBuffer(){
 	let img = gd.createSync(width, height);

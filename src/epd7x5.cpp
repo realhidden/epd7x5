@@ -13,8 +13,8 @@ using v8::String;
 using v8::Value;
 
 // Display resolution
-#define EPD_WIDTH       640
-#define EPD_HEIGHT      384
+#define EPD_WIDTH       800
+#define EPD_HEIGHT      480
 
 // EPD7IN5B commands
 #define PANEL_SETTING                               0x00
