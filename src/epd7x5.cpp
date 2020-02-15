@@ -29,6 +29,7 @@ using v8::Value;
 #define DATA_STOP                                   0x11
 #define DISPLAY_REFRESH                             0x12
 #define IMAGE_PROCESS                               0x13
+#define DUAL_SPI_MODE                               0x15
 #define LUT_FOR_VCOM                                0x20 
 #define LUT_BLUE                                    0x21
 #define LUT_WHITE                                   0x22
@@ -67,7 +68,7 @@ void SendData(unsigned char data) {
 
 void WaitUntilIdle(void) {
     while(EpdIf::DigitalRead(BUSY_PIN) == 0) {      //0: busy, 1: idle
-        EpdIf::DelayMs(100);
+        EpdIf::DelayMs(200);
     }      
 }
 
@@ -88,34 +89,28 @@ void init(const FunctionCallbackInfo<Value>& args) {
     }
 	else {
 		Reset();
-		SendCommand(POWER_SETTING); 
-		SendData(0x37);
-		SendData(0x00);
-		SendCommand(PANEL_SETTING);
-		SendData(0xCF);
-		SendData(0x08);
-		SendCommand(BOOSTER_SOFT_START);
-		SendData(0xC7);     
-		SendData(0xCC);
-		SendData(0x28);
-		SendCommand(PLL_CONTROL);
-		SendData(0x3C);        
-		SendCommand(TEMPERATURE_CALIBRATION);
-		SendData(0x00);
-		SendCommand(VCOM_AND_DATA_INTERVAL_SETTING);
-		SendData(0x77);
-		SendCommand(TCON_SETTING);
-		SendData(0x22);
-		SendCommand(TCON_RESOLUTION);
-		SendData(0x02);     //source 640
-		SendData(0x80);
-		SendData(0x01);     //gate 384
-		SendData(0x80);
-		SendCommand(VCM_DC_SETTING);
-		SendData(0x1E);      //decide by LUT file
-		SendCommand(0xE5);           //FLASH MODE            
-		SendData(0x03);  
-		SendCommand(POWER_ON);
+        SendCommand(POWER_SETTING);
+        SendData(0x07);
+        SendData(0x07);    //VGH=20V,VGL=-20V
+        SendData(0x3f);		//VDH=15V
+        SendData(0x3f);		//VDL=-15V
+        SendCommand(POWER_ON);
+        EpdIf::DelayMs(100);
+        WaitUntilIdle();
+        SendCommand(PANEL_SETTING);
+        SendData(0x0F);   //KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
+        SendCommand(TCON_RESOLUTION);
+        SendData(0x03);		//source 800
+        SendData(0x20);
+        SendData(0x01);		//gate 480
+        SendData(0xE0);
+        SendCommand(DUAL_SPI_MODE);
+        SendData(0x00);
+        SendCommand(VCOM_AND_DATA_INTERVAL_SETTING);
+        SendData(0x11);
+        SendData(0x07);
+        SendCommand(TCON_SETTING);
+        SendData(0x22);
 		WaitUntilIdle();
 	}
 
