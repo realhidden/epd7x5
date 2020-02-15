@@ -147,13 +147,17 @@ void displayFrame(const FunctionCallbackInfo<Value>& args) {
 	display(imagedata);
 }
 
-
-
-
+void deepSleep(const FunctionCallbackInfo<Value>& args) {
+    SendCommand(POWER_OFF);
+    WaitUntilIdle();
+    SendCommand(DEEP_SLEEP);
+    SendData(0xA5);
+}
 
 void InitAll(Local<Object> exports) {
   NODE_SET_METHOD(exports, "init", init);
   NODE_SET_METHOD(exports, "displayFrame", displayFrame);
+  NODE_SET_METHOD(exports, "deepSleep", deepSleep);
 }
 
 NODE_MODULE(epd7x5, InitAll)

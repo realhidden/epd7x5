@@ -51,6 +51,7 @@ function displayImageBuffer(img){
 exports.getImageBuffer = getImageBuffer;
 exports.displayImageBuffer = displayImageBuffer;
 exports.init = epd7x5.init;
+exports.deepSleep = epd7x5.deepSleep;
 exports.white = 32;
 exports.red = 128;
 exports.black = 224;	
