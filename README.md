@@ -1,74 +1,46 @@
-# epd7x5
+# epd7x5-v2
 
-A Node.js package for the 7.5inch e-Paper HAT(B) waveshare display on a Raspberry Pi 2/3/zero
+A Node.js package for the 7.5inch e-Paper HAT(B) V2 (12.2019) Waveshare display on a Raspberry Pi 2/3/zero
 
 [Link to waveshare wiki](https://www.waveshare.com/wiki/7.5inch_e-Paper_HAT_(B))
 
 ## Dependencies
-1. WiringPi for GPIO access of Raspberry Pi
-2. libgd2 for text output and drawing
+WiringPi for GPIO access of Raspberry Pi
 
 ## Installation
-Enable the SPI interface on Raspberry Pi: `sudo raspi-config` 
+1. Enable the SPI interface on Raspberry Pi: `sudo raspi-config` 
+2. WiringPi: follow installation on [wiringpi.com](http://wiringpi.com/download-and-install/)
+3. (optional) Install node-canvas: `npm i canvas`
+4. epd7x5-v2: `npm i epd7x5-v2`
 
-WiringPi: follow installation on [wiringpi.com](http://wiringpi.com/download-and-install/)
+## Example with node-canvas lib
 
-libgd2: `sudo apt-get install libgd2-dev # libgd`
+```typescript
+import * as epd from 'epd7x5-v2';
+import { createCanvas } from 'canvas';
 
-epd7x5: `npm install epd7x5`
+// Initialize canvas
+const canvas = createCanvas(epd.RES_WIDTH, epd.RES_HEIGHT);
+const ctx = canvas.getContext('2d', { pixelFormat: 'A8' });
 
+// Draw something
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, epd.RES_WIDTH, epd.RES_HEIGHT);
+ctx.font = '65px';
+ctx.fillStyle = 'black';
+ctx.fillText('Hello World!', 5, 5);
+ctx.fillStyle = 'red';
+ctx.fillText('Hello World!', 5, 105);
+ctx.fillRect(5, 205, 500, 69);
+ctx.fillStyle = 'white';
+ctx.fillText('Hello World!', 5, 205);
 
-## Usage example
-
-```javascript
-const epd7x5 = require('epd7x5');
-
-//init the module
-epd7x5.init();
-
-//get a gd image of 640 x 384 Pixels for drawing
-var img = epd7x5.getImageBuffer() ;
-
-//load some fonts
-let font = '/home/pi/epd_test/ARIAL.TTF';
-
-//draw content with node-gd functions
-img.stringFT(epd7x5.black, font, 64, -0.0, 5, 100, 'Hello EPD 7x5!');
-img.stringFT(epd7x5.red, font, 64, -0.0, 5, 200, 'Hello EPD 7x5!');
-img.filledRectangle(0, 220, 640, 310, epd7x5.red)
-img.stringFT(epd7x5.white, font, 64, -0.0, 5, 300, 'Hello EPD 7x5!');
-
-//send the image for display
-epd7x5.displayImageBuffer(img);
+// Send image to the HAT and sleep
+epd.init();
+epd.displayImageBuffer(canvas.toBuffer('raw'));
+epd.deepSleep();
 ```
 
-The module exports the following functions and constants:
+## Roadmap
 
-### Functions:
-`epd7x5.init()`
-
-`epd7x5.getImageBuffer()` 
-
-`epd7x5.displayImageBuffer(img)`
-
-### Constants:
-`epd7x5.white`
-
-`epd7x5.red`
-
-`epd7x5.black`
-	
-`epd7x5.width`
-
-`epd7x5.height`
-
-### gd namespace for access of functions on the gd object: 
-`epd7x5.gd`
-
-example: `epd7x5.gd.createFromFile(path)` to open an image
-
-Documentation of node-gd functions can be found [here](https://y-a-v-a.github.io/node-gd/)
-
-## License
-
-Apache 2.0
+* Rewrite to async code
