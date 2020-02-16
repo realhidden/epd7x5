@@ -1,50 +1,37 @@
 const epd7x5 = require('./build/Release/epd7x5');
 const gd = require('node-gd');
 
-let width = 800;
-let height = 480;
+const RES_WIDTH = 800;
+const RES_HEIGHT = 480;
+const COLOR_BUFFER_SIZE = (RES_WIDTH * RES_HEIGHT) >> 3;
 
-function getImageBuffer(){
-	let img = gd.createSync(width, height);
-	for (let i=0; i<256; i++) img.colorAllocate(i, i, i); 	
+const COLOR_WHITE = 32;
+const COLOR_RED = 128;
+const COLOR_BLACK = 224;
+
+function getImageBuffer() {
+	const img = gd.createSync(RES_WIDTH, RES_HEIGHT);
+	for (let i=0; i<256; i++) img.colorAllocate(i, i, i);
 	return img;
 }
 
-function displayImageBuffer(img){
-
-	let buf = new Buffer(width * height/2);
-	for(let y = 0; y < height; y++) { 
-		for(let  x = 0; x<width-1; x+=2){
-			let pixel_0 = img.getPixel(x, y);
-			let pixel_1 = img.getPixel(x+1, y);
-			
-			if (pixel_0 < 64)
-				if (pixel_1 < 64)
-					buf[(y*width+x)/2] = 0x33;
-				else if (pixel_1 < 192)
-					buf[(y*width+x)/2] = 0x34;
-				else
-					buf[(y*width+x)/2] = 0x30; 
-			else if (pixel_0 < 192) 
-				if (pixel_1 < 64)
-					buf[(y*width+x)/2] = 0x43;
-				else if (pixel_1 < 192)
-					buf[(y*width+x)/2] = 0x44;
-				else	
-					buf[(y*width+x)/2] = 0x40;		
-			else
-				if (pixel_1 < 64)
-					buf[(y*width+x)/2] = 0x03;
-				else if (pixel_1 < 192)
-					buf[(y*width+x)/2] = 0x04;
-				else
-					buf[(y*width+x)/2] = 0x00; 
-			
+function displayImageBuffer(img) {
+	const buf = Buffer.alloc(COLOR_BUFFER_SIZE, 0xFF);
+	const bufRed = Buffer.alloc(COLOR_BUFFER_SIZE, 0);
+	for (let y = 0; y < RES_HEIGHT; y++) {
+		for (let x = 0; x < RES_WIDTH; x++) {
+			switch (img.getPixel(x, y)) {
+				case COLOR_BLACK:
+					buf[((y * RES_WIDTH) + x) >> 3] &= ~(0x80 >> (x % 8));
+					break;
+				case COLOR_RED:
+					bufRed[((y * RES_WIDTH) + x) >> 3] |= 0x80 >> (x % 8);
+					break;
+			}
 		}
 	}
 
-
-	epd7x5.displayFrame(buf);
+	epd7x5.displayFrame(buf, bufRed);
 	img.destroy();
 }
 
@@ -52,10 +39,10 @@ exports.getImageBuffer = getImageBuffer;
 exports.displayImageBuffer = displayImageBuffer;
 exports.init = epd7x5.init;
 exports.deepSleep = epd7x5.deepSleep;
-exports.white = 32;
-exports.red = 128;
-exports.black = 224;	
-exports.width = width;
-exports.height = height;
+exports.white = COLOR_WHITE;
+exports.red = COLOR_RED;
+exports.black = COLOR_BLACK;
+exports.width = RES_WIDTH;
+exports.height = RES_HEIGHT;
 exports.gd = gd;
 

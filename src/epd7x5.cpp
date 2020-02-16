@@ -28,7 +28,7 @@ using v8::Value;
 #define DATA_START_TRANSMISSION_1                   0x10
 #define DATA_STOP                                   0x11
 #define DISPLAY_REFRESH                             0x12
-#define IMAGE_PROCESS                               0x13
+#define DATA_START_TRANSMISSION_2                   0x13
 #define DUAL_SPI_MODE                               0x15
 #define LUT_FOR_VCOM                                0x20 
 #define LUT_BLUE                                    0x21
@@ -119,12 +119,16 @@ void init(const FunctionCallbackInfo<Value>& args) {
 	args.GetReturnValue().Set(num);
 }
 
-void display( unsigned char* frame_buffer) {
+void display(unsigned char* frame_buffer, unsigned char* frame_buffer_red) {
     SendCommand(DATA_START_TRANSMISSION_1);
-	for(int i = 0; i < EPD_WIDTH / 2 * EPD_HEIGHT; i++) {   
+	for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
         SendData(frame_buffer[i]);
     }
-	
+
+    SendCommand(DATA_START_TRANSMISSION_2);
+    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
+        SendData(frame_buffer_red[i]);
+    }
 
     SendCommand(DISPLAY_REFRESH);
     EpdIf::DelayMs(100);
@@ -136,10 +140,13 @@ void displayFrame(const FunctionCallbackInfo<Value>& args) {
 	//Isolate* isolate = args.GetIsolate();
 
 	v8::Local<v8::Uint8Array> view = args[0].As<v8::Uint8Array>();
+    v8::Local<v8::Uint8Array> view_red = args[1].As<v8::Uint8Array>();
 	void *data = view->Buffer()->GetContents().Data();
+	void *data_red = view_red->Buffer()->GetContents().Data();
 	unsigned char* imagedata = static_cast<unsigned char*>(data);
-	
-	display(imagedata);
+    unsigned char* imagereddata = static_cast<unsigned char*>(data_red);
+
+	display(imagedata, imagereddata);
 }
 
 void deepSleep(const FunctionCallbackInfo<Value>& args) {
