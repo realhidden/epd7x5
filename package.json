@@ -9,7 +9,8 @@
     "native_build": "node-gyp rebuild",
     "install": "node install.js",
     "build": "tsc",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "example-hello": "tsc --skipLibCheck examples/canvas-hello-world.ts && node examples/canvas-hello-world"
   },
   "repository": {
     "type": "git",

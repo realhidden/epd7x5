@@ -2,8 +2,8 @@ const os = require('os');
 const spawn = require('cross-spawn');
 
 if (os.arch() === 'arm') {
-    spawn.sync('npm', ['run', 'native_build'], {
-        input: 'ARM architecture detected. Going to build native module.',
-        stdio: 'inherit'
-    });
+  console.log('Building native module...');
+  spawn.sync('npm', ['run', 'native_build'], { stdio: 'inherit' });
+} else {
+  console.log('Non ARM architecture detected. Skipping native build.');
 }
