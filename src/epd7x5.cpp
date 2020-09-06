@@ -1,6 +1,9 @@
 #include <node.h>
 #include "epdif.h" 
 
+// Modification based on diff:
+// https://raw.githubusercontent.com/waveshare/e-Paper/master/RaspberryPi%26JetsonNano/c/lib/e-Paper/EPD_7in5b_V2.c
+// https://raw.githubusercontent.com/waveshare/e-Paper/master/RaspberryPi%26JetsonNano/c/lib/e-Paper/EPD_7in5b_HD.c
 using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::Isolate;
@@ -10,22 +13,8 @@ using v8::Object;
 using v8::Value;
 
 // Display resolution
-#define EPD_WIDTH       800
-#define EPD_HEIGHT      480
-
-// EPD7IN5B V2 commands
-#define PANEL_SETTING                               0x00
-#define POWER_SETTING                               0x01
-#define POWER_OFF                                   0x02
-#define POWER_ON                                    0x04
-#define DEEP_SLEEP                                  0x07
-#define DATA_START_TRANSMISSION_1                   0x10
-#define DISPLAY_REFRESH                             0x12
-#define DATA_START_TRANSMISSION_2                   0x13
-#define DUAL_SPI_MODE                               0x15
-#define VCOM_AND_DATA_INTERVAL_SETTING              0x50
-#define TCON_SETTING                                0x60
-#define TCON_RESOLUTION                             0x61
+#define EPD_WIDTH       880
+#define EPD_HEIGHT      528
 
 void SendCommand(unsigned char command) {
     EpdIf::DigitalWrite(DC_PIN, LOW);
@@ -39,13 +28,16 @@ void SendData(unsigned char data) {
 
 void WaitUntilIdle(void) {
     while(EpdIf::DigitalRead(BUSY_PIN) == 0) {      //0: busy, 1: idle
-        EpdIf::DelayMs(200);
-    }      
+        EpdIf::DelayMs(10);
+    }
+    EpdIf::DelayMs(200);
 }
 
 void Reset(void) {
-    EpdIf::DigitalWrite(RST_PIN, LOW);                //module reset    
+    EpdIf::DigitalWrite(RST_PIN, HIGH);
     EpdIf::DelayMs(200);
+    EpdIf::DigitalWrite(RST_PIN, LOW);                //module reset    
+    EpdIf::DelayMs(10);
     EpdIf::DigitalWrite(RST_PIN, HIGH);
     EpdIf::DelayMs(200);    
 }
@@ -57,29 +49,53 @@ void init(const FunctionCallbackInfo<Value>& args) {
 	
     if (epdInterfaceInitSuccess) {
 		Reset();
-        SendCommand(POWER_SETTING);
-        SendData(0x07);
-        SendData(0x07);    //VGH=20V,VGL=-20V
-        SendData(0x3f);		//VDH=15V
-        SendData(0x3f);		//VDL=-15V
-        SendCommand(POWER_ON);
-        EpdIf::DelayMs(100);
-        WaitUntilIdle();
-        SendCommand(PANEL_SETTING);
-        SendData(0x0F);   //KW-3f   KWR-2F	BWROTP 0f	BWOTP 1f
-        SendCommand(TCON_RESOLUTION);
-        SendData(0x03);		//source 800
-        SendData(0x20);
-        SendData(0x01);		//gate 480
-        SendData(0xE0);
-        SendCommand(DUAL_SPI_MODE);
+		SendCommand(0x12); //SWRESET
+		WaitUntilIdle(); //waiting for the electronic paper IC to release the idle signal
+		SendCommand(0x46); // Auto Write RAM
+		SendData(0xF7);
+		WaitUntilIdle(); //waiting for the electronic paper IC to release the idle signal
+
+		SendCommand(0x47); // Auto Write RAM
+        SendData(0xF7);
+        WaitUntilIdle(); //waiting for the electronic paper IC to release the idle signal
+
+        SendCommand(0x0C); // Soft start setting
+        SendData(0xAE);
+        SendData(0xC7);
+        SendData(0xC3);
+        SendData(0xC0);
+        SendData(0x40);   
+        SendCommand(0x01);  // Set MUX as 527
+        SendData(0xAF);
+        SendData(0x02);
+        SendData(0x01);
+        SendCommand(0x11);  // Data entry mode
+        SendData(0x01);
+        SendCommand(0x44);
+        SendData(0x00); // RAM x address start at 0
         SendData(0x00);
-        SendCommand(VCOM_AND_DATA_INTERVAL_SETTING);
-        SendData(0x11);
-        SendData(0x07);
-        SendCommand(TCON_SETTING);
-        SendData(0x22);
-		WaitUntilIdle();
+        SendData(0x6F); // RAM x address end at 36Fh -> 879
+        SendData(0x03);
+        SendCommand(0x45);
+        SendData(0xAF); // RAM y address start at 20Fh;
+        SendData(0x02);
+        SendData(0x00); // RAM y address end at 00h;
+        SendData(0x00);
+        SendCommand(0x3C); // VBD
+        SendData(0x01); // LUT1, for white
+        SendCommand(0x18);
+        SendData(0x80);
+        SendCommand(0x22);
+        SendData(0xB1);	//Load Temperature and waveform setting.
+        SendCommand(0x20);
+        WaitUntilIdle();        //waiting for the electronic paper IC to release the idle signal
+
+        SendCommand(0x4E); 
+        SendData(0x00);
+        SendData(0x00);
+        SendCommand(0x4F); 
+        SendData(0xAF);
+        SendData(0x02);
 	}
 
 	Local<Boolean> nodeReturnVal = Boolean::New(isolate, epdInterfaceInitSuccess);
@@ -87,18 +103,28 @@ void init(const FunctionCallbackInfo<Value>& args) {
 }
 
 void display(unsigned char* frame_buffer, unsigned char* frame_buffer_red) {
-    SendCommand(DATA_START_TRANSMISSION_1);
-	for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
-        SendData(frame_buffer[i]);
-    }
+    SendCommand(0x4F);
+    SendData(0xAF);
+    SendData(0x02);
 
-    SendCommand(DATA_START_TRANSMISSION_2);
+    //send black data
+    SendCommand(0x24);
     for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
-        SendData(frame_buffer_red[i]);
+                SendData(frame_buffer[i]);
     }
 
-    SendCommand(DISPLAY_REFRESH);
-    EpdIf::DelayMs(100);
+    //send red data
+    SendCommand(0x26);
+    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
+            SendData(frame_buffer_red[i]);
+    }
+
+    //Turn on Display
+    SendCommand(0x22);
+    SendData(0xC7);    //Load LUT from MCU(0x32)
+
+    SendCommand(0x20);
+    EpdIf::DelayMs(200);    //!!!The delay here is necessary, 200uS at least!!!
     WaitUntilIdle();
 }
 
@@ -115,10 +141,8 @@ void displayFrame(const FunctionCallbackInfo<Value>& args) {
 }
 
 void deepSleep(const FunctionCallbackInfo<Value>& args) {
-    SendCommand(POWER_OFF);
-    WaitUntilIdle();
-    SendCommand(DEEP_SLEEP);
-    SendData(0xA5);
+    SendCommand(0x10);
+    SendData(0x01);
 }
 
 void InitAll(Local<Object> exports) {

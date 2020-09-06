@@ -1,2 +1,5 @@
 lib
 examples/*.js
+node_modules
+.idea
+build/
