@@ -37,7 +37,7 @@ void Reset(void) {
     EpdIf::DigitalWrite(RST_PIN, HIGH);
     EpdIf::DelayMs(200);
     EpdIf::DigitalWrite(RST_PIN, LOW);                //module reset    
-    EpdIf::DelayMs(10);
+    EpdIf::DelayMs(200);
     EpdIf::DigitalWrite(RST_PIN, HIGH);
     EpdIf::DelayMs(200);    
 }
@@ -109,13 +109,13 @@ void display(unsigned char* frame_buffer, unsigned char* frame_buffer_red) {
 
     //send black data
     SendCommand(0x24);
-    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
-                SendData(frame_buffer[i]);
+    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++) {
+            SendData(frame_buffer[i]);
     }
 
     //send red data
     SendCommand(0x26);
-    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT; i++) {
+    for(int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++) {
             SendData(frame_buffer_red[i]);
     }
 
