@@ -1,7 +1,7 @@
 const epd7x5 = require('../build/Release/epd7x5');
 
-export const RES_WIDTH = 800;
-export const RES_HEIGHT = 480;
+export const RES_WIDTH = 880;
+export const RES_HEIGHT = 528;
 
 const RES_PIXEL_COUNT = RES_WIDTH * RES_HEIGHT;
 const TARGET_COLOR_BUFFER_SIZE = RES_PIXEL_COUNT >> 3;
